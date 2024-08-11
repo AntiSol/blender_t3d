@@ -21,7 +21,7 @@ class Vec3(Sequence):
 	""" 3D vector/point. """
 	def __init__(self,*coords)->None:
 		""" Construct from a list or three floating point values. """
-		self.coords:list[float]=[0.]*3
+		self.coords=[0.]*3
 		if len(coords)==1 and isinstance(coords[0],Sequence):
 			coords=coords[0]
 		for i,v in enumerate(coords[:3]):
@@ -30,7 +30,7 @@ class Vec3(Sequence):
 		return self.__class__([self.coords[i]+other.coords[i] for i in range(3)])
 	def __eq__(self,other)->bool:
 		return self.coords==other.coords
-	def __getitem__(self,index:int|slice)->float|list[float]:
+	def __getitem__(self,index):
 		return self.coords[index]
 	def __len__(self)->int:
 		return len(self.coords)
@@ -72,12 +72,12 @@ class Vertex(Vec3):
 
 class Polygon:
 	""" T3D Polygon. """
-	def __init__(self,verts:list[Vertex]|None=None)->None:
+	def __init__(self,verts=None)->None:
 		self.origin:tuple=(0,0,0)
-		self.pan:tuple[int,int]=(0,0)
-		self.u:tuple[float,float,float]=(1.,0.,0.)
-		self.v:tuple[float,float,float]=(0.,0.,1.)
-		self.vertices:list[Vertex]=verts if verts else []
+		self.pan=(0,0)
+		self.u=(1.,0.,0.)
+		self.v=(0.,0.,1.)
+		self.vertices=verts if verts else []
 		self.texture:str=""
 		self.flags:int=0
 	def __str__(self)->str:
@@ -97,7 +97,7 @@ class Polygon:
 class MyEnum(Enum):
 	""" Takes int or a string equal to member name. """
 	@classmethod
-	def _missing_(cls,value:int|str):
+	def _missing_(cls,value:int):
 		if isinstance(value,str):
 			try:
 				return cls(list(str(x) for x in cls).index(value.lower()))
@@ -127,7 +127,7 @@ class SheerAxis(MyEnum):
 class Brush:
 	""" T3D Brush. """
 	# pylint:disable=too-many-instance-attributes
-	def __init__(self,poly_list:list[Polygon]|None=None,location:list|None=None)->None:
+	def __init__(self,poly_list=None,location:list=None)->None:
 		# Actor name can be omitted, UED will create one.
 		self.actor_name:str="ActorName"
 		# Brush name (Begin Brush Name=...)
@@ -140,7 +140,7 @@ class Brush:
 		self.postscale_sheer:float=0.0
 		self.postscale_sheer_axis:str=self.mainscale_sheer_axis
 		self.group:str=""
-		self.polygons:list[Polygon]=poly_list if poly_list else []
+		self.polygons=poly_list if poly_list else []
 		self.location:tuple=tuple(location) if location else ()
 		self.rotation:tuple=()
 		self.prepivot:tuple=()
@@ -181,10 +181,10 @@ class Brush:
 
 	def __str__(self)->str:
 		def coords_string(coords:tuple)->str:
-			location_prefixes:tuple[str,str,str]=("X","Y","Z")
+			location_prefixes=("X","Y","Z")
 			return ",".join([x[0]+'='+str(x[1]) for x in zip(location_prefixes,coords)])
 		def rotation_string(values:tuple)->str:
-			prefixes:tuple[str,str,str]=("Roll","Pitch","Yaw")
+			prefixes=("Roll","Pitch","Yaw")
 			return ",".join([x[0]+'='+str(int(round(x[1]))) for x in zip(prefixes,values)])
 
 		mainscale_txt:str=""
@@ -239,9 +239,9 @@ End Actor
 		Return data that can be passed to bpy.types.Mesh.from_pydata().
 		https://docs.blender.org/api/current/bpy.types.Mesh.html#bpy.types.Mesh.from_pydata
 		"""
-		verts:list[list[float]]=[v.coords for p in self.polygons for v in p.vertices]
-		edges:list=[]
-		faces:list[list[int]]=[]
+		verts=[v.coords for p in self.polygons for v in p.vertices]
+		edges=[]
+		faces=[]
 		i=0
 		for p in self.polygons:
 			faces.append(list(range(i,i+len(p.vertices))))

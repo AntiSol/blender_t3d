@@ -127,7 +127,7 @@ def import_t3d_file(
 	""" Import T3D file into scene. """
 
 	# Parse T3D file.
-	brushes:list[t3d.Brush]=t3d_parser.t3d_open(filepath)
+	brushes=t3d_parser.t3d_open(filepath)
 	time_start:float=time.time()
 	# Create a collection bearing the T3D file's name.
 	coll:bpy.types.Collection=bpy.data.collections.new(Path(filepath).name)

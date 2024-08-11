@@ -20,7 +20,7 @@ if DEBUG:
 
 TEXTURE_SIZE:float=256.0
 
-def brush_from_object(o:'bpy.types.Object',scale_multiplier:float=1.0)->Brush|str:
+def brush_from_object(o:'bpy.types.Object',scale_multiplier:float=1.0)->Brush:
 	""" Turn Blender Object into t3d.Brush. """
 
 	if o.type!="MESH":
@@ -32,11 +32,11 @@ def brush_from_object(o:'bpy.types.Object',scale_multiplier:float=1.0)->Brush|st
 	bm:bmesh.types.BMesh=bmesh.new()
 	bm.from_mesh(o.data)
 
-	poly_list:list[Polygon]=[]
+	poly_list=[]
 	f:bmesh.types.BMFace
 	for f in bm.faces:
-		vertices:list[bmesh.types.BMVert]=[v for v in f.verts if isinstance(v,bmesh.types.BMVert)]
-		verts:list[Vertex]=[Vertex((Vector(v.co)*scale_multiplier).to_tuple()) for v in vertices]
+		vertices=[v for v in f.verts if isinstance(v,bmesh.types.BMVert)]
+		verts=[Vertex((Vector(v.co)*scale_multiplier).to_tuple()) for v in vertices]
 		poly=Polygon(verts)
 		# Texture name.
 		poly.texture=get_material_name(o,f.material_index)
@@ -78,7 +78,7 @@ def export(object_list,scale_multiplier:float=1.0)->str:
 		t3d_text=f"""Begin Map\n{t3d_text}End Map\n"""
 	return t3d_text
 
-def export_uv(verts:list[Vector],uvs:list[Vector],normal:Vector)->tuple:
+def export_uv(verts,uvs,normal:Vector)->tuple:
 	""" Return Origin,TextureU,TextureV in tuple. """
 	uvs=[Vector((uv.x,1-uv.y))*TEXTURE_SIZE for uv in uvs]
 	verts=rotate_triangle_towards_normal(verts,Vector((0,0,1)))
@@ -134,16 +134,16 @@ def normal_rotation(n1:Vector,n2:Vector)->Matrix:
 
 def polygon_texture_transform(face:'bmesh.types.BMFace',mesh:'bmesh.types.BMesh')->tuple:
 	""" Compute the Origin, TextureU, TextureV for a given face. """
-	points:list[bmesh.types.BMLoop]=face.loops[0:3]
+	points=face.loops[0:3]
 	if len(points)<2 or len(mesh.loops.layers.uv)==0:
 		print("Invalid geometry or no UV map.")
 		return ((0,0,0),(1,0,0),(0,1,0))
 	uvmap=mesh.loops.layers.uv[0]
-	verts:list[Vector]=[x.vert.co for x in points] # type: ignore
-	uvs:list[Vector]=[x[uvmap].uv for x in points] # type: ignore
+	verts=[x.vert.co for x in points] # type: ignore
+	uvs=[x[uvmap].uv for x in points] # type: ignore
 	return export_uv(verts,uvs,face.normal)
 
-def rotate_triangle_towards_normal(points:list[Vector],n:Vector)->list:
+def rotate_triangle_towards_normal(points,n:Vector)->list:
 	""" Return points after plane is rotated towards n. """
 	assert len(points)==3,"Not a triangle."
 	plane_normal:Vector=geometry.normal(points)

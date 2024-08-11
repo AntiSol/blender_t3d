@@ -42,11 +42,11 @@ class Level(IntEnum):
 	POLYLIST=auto()
 	POLYGON=auto()
 
-def name_values(words:list[str])->dict[str,str]:
+def name_values(words)->dict:
 	""" Extract "key=value" pairs into a dictionary. """
-	d:dict[str,str]={}
+	d={}
 	for x in words:
-		nv:list[str]=x.split("=",1)
+		nv=x.split("=",1)
 		if len(nv)==2:
 			d[nv[0].strip()]=nv[1].strip()
 	return d
@@ -71,7 +71,7 @@ def dict_from_t3d_property(line:str)->dict:
 		pass
 	return d
 
-def coords_from_xyz_dict(d:dict,default:float=0.0)->tuple[float,float,float]:
+def coords_from_xyz_dict(d:dict,default:float=0.0)->tuple:
 	"""
 	Turn dictionary keys "x","y","z" to a tuple (x,y,z).
 	Missing coordinates are assigned the default value.
@@ -81,7 +81,7 @@ def coords_from_xyz_dict(d:dict,default:float=0.0)->tuple[float,float,float]:
 	z:float=d.get("z",d.get("Z",default))
 	return x,y,z
 
-def rotation_from_dict(d:dict)->tuple[int,int,int]:
+def rotation_from_dict(d:dict)->tuple:
 	"""
 	Turn dictionary keys "roll","pitch","yaw" to a tuple.
 	Case sensitive. Missing values are set to zero.
@@ -91,7 +91,7 @@ def rotation_from_dict(d:dict)->tuple[int,int,int]:
 	z:int=d.get("yaw",0)
 	return x,y,z
 
-def parse_vector(text:str)->tuple[float,...]:
+def parse_vector(text:str)->tuple:
 	"""
 	Interpret a T3D list of signed numbers to tuple of floats.
 	Example:
@@ -99,7 +99,7 @@ def parse_vector(text:str)->tuple[float,...]:
 	"""
 	return tuple(float(val) for val in text.split(","))
 
-def parse_polygon_property(line:str)->dict[str,tuple]:
+def parse_polygon_property(line:str)->dict:
 	"""
 	Parse a Polygon property line.
 	Those are the lines inside a Begin Polygon/End Polygon block.
@@ -119,14 +119,14 @@ def parse_polygon_property(line:str)->dict[str,tuple]:
 	except ValueError:
 		return {}
 
-def parse(text:str)->list[dict]:
+def parse(text:str)->list:
 	"""
 	Parse T3D text containing only Brush actors.
 	Return a list of brushes as nested dictionaries.
 	"""
 	text=text.lower()
 	context:Level=Level.ROOT
-	brushes:list[dict]=[]
+	brushes=[]
 	brush:dict={}
 	line_number:int
 	line:str
@@ -136,23 +136,22 @@ def parse(text:str)->list[dict]:
 		# Skip empty line.
 		if not line:
 			continue
-		words:list[str]=line.split()
+		words=line.split()
 		if words[0]=="begin":
 			context=Level(context+1)
 			block_name:str=words[1]
 			assert block_name==context.name.lower(),f"Unexpected Begin block '{block_name}'"
-			match context:
-				case Level.ACTOR:
+			if context == Level.ACTOR:
 					# Start a new Brush actor.
 					brush:dict={"name":name_values(words)["name"]}
-				case Level.BRUSH:
+			if context == Level.BRUSH:
 					# Get Brush name.
 					brush_name:str=words[-1].split("=")[1]
 					brush["brush_name"]=brush_name
-				case Level.POLYLIST:
+			if context == Level.POLYLIST:
 					# Start a new polygon list.
 					brush["polylist"]=[]
-				case Level.POLYGON:
+			if context == Level.POLYGON:
 					# Create a new polygon.
 					p:dict=name_values(words)
 					if p.get("flags",False):
@@ -179,7 +178,7 @@ def parse(text:str)->list[dict]:
 	assert context==Level.ROOT,"Parser didn't end in root context."
 	return brushes
 
-def t3d_open(path:str)->list[t3d.Brush]:
+def t3d_open(path:str)->list:
 	"""
 	Open and interpret T3D file.
 	path: Path to the T3D file.
@@ -188,9 +187,9 @@ def t3d_open(path:str)->list[t3d.Brush]:
 	with open(path,"rt",encoding="utf-8") as file:
 		time_start:float=time.time()
 		brushes_text:str=filter_brushes(file.read())
-		brushes:list[dict]=parse(brushes_text)
+		brushes=parse(brushes_text)
 		# Convert dictionaries to t3d.Brush.
-		tbs:list[t3d.Brush]=[]
+		tbs=[]
 		for b in brushes:
 			#pprint.pprint(b)
 			# Convert values to tuples.
@@ -211,7 +210,7 @@ def t3d_open(path:str)->list[t3d.Brush]:
 
 def test()->None:
 	""" Test. """
-	samples_list:tuple[str,...]=(
+	samples_list:tuple=(
 		"dev/samples/swat/fairfax-swat4.t3d",
 		"dev/samples/swat/map-ue2.t3d",
 		"dev/samples/swat/streets-raveshield.t3d",
@@ -226,7 +225,7 @@ def test()->None:
 		"dev/samples/xiii/xiii_cubes.t3d"
 	)
 	for s in samples_list:
-		b:list[t3d.Brush]=t3d_open(s)
+		b=t3d_open(s)
 		assert len(b)>0
 	assert True
 
